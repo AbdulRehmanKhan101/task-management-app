@@ -361,6 +361,6 @@ Abdul Rehman Khan
 BS Computer Science
 Bahria University Islamabad
 
-GitHub: 
+GitHub:https://github.com/AbdulRehmanKhan101 
 
-LinkedIn:
+LinkedIn:https://www.linkedin.com/in/abdul-rehman-khan-758036352/

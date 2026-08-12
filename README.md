@@ -27,6 +27,7 @@ The application also includes a frontend that communicates with the FastAPI back
 
 - Python
 - FastAPI
+- PostgreSQL
 - SQLAlchemy
 - Pydantic
 - JWT

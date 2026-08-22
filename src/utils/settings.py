@@ -6,5 +6,6 @@ class Settings(BaseSettings):
     SECRET_KEY:str
     ALGORITHM:str
     EXP_TIME:int
+    ALLOWED_ORIGINS:str="*"  # comma-separated list, e.g. "https://your-frontend.onrender.com"
 
 settings=Settings()

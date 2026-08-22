@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: task-management-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: DB_CONNECTION
+        sync: false      # set manually in Render dashboard, never store secrets in the repo
+      - key: SECRET_KEY
+        sync: false
+      - key: ALGORITHM
+        value: HS256
+      - key: EXP_TIME
+        value: "60"
+
+  - type: web
+    name: task-management-frontend
+    runtime: static
+    rootDir: front-end
+    staticPublishPath: .

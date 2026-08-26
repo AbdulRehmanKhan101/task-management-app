@@ -25,6 +25,7 @@ The application also includes a frontend that communicates with the FastAPI back
 - CORS configuration
 - Environment-based configuration
 - Interactive API documentation with Swagger UI
+- Standalone Hugging Face chatbot
 
 ## Tech Stack
 
@@ -51,6 +52,10 @@ The application also includes a frontend that communicates with the FastAPI back
 
 ```text
 task-management-app/
+│
+├── chatbot/                # Standalone Hugging Face chatbot route
+│   ├── dtos.py
+│   └── router.py
 │
 ├── src/
 │   │
@@ -196,6 +201,16 @@ For example, a user should not be able to update or delete another user's task s
 
 Protected endpoints require a valid JWT token.
 
+### Chatbot Endpoint
+
+| Method | Endpoint | Authentication | Description |
+| ------ | -------- | -------------- | ----------- |
+| POST | `/chat` | No | Send a conversation to the standalone Hugging Face chatbot |
+
+The chatbot is isolated from the task, user, and database functionality. It does not
+read or modify application data. The Hugging Face token is kept on the backend in the
+`HUGGINGFACE_API_KEY` environment variable and is never exposed to the frontend.
+
 ## API Documentation
 
 FastAPI automatically generates interactive API documentation.
@@ -241,6 +256,7 @@ SECRET_KEY=your_secret_key
 ALGORITHM=HS256
 EXP_TIME=60
 ALLOWED_ORIGINS=*
+HUGGINGFACE_API_KEY=your_huggingface_token
 ```
 
 `DB_CONNECTION` should be a PostgreSQL connection string — e.g. from a free [Neon](https://neon.tech) project. `SECRET_KEY` can be generated with:
@@ -347,7 +363,7 @@ ALGORITHM=
 EXP_TIME=
 ```
 
-The actual values should only exist in the local environment (or, in production, as secrets set via `fastapi cloud env set`).
+The actual values should only exist in the local environment (or, in production, as secrets set in the FastAPI Cloud dashboard).
 
 If you want to show other developers which variables are required, use the included `.env.example` file, which contains placeholder values only.
 
@@ -357,7 +373,7 @@ The real `.env` file should remain ignored by Git.
 
 The live version of this project is deployed as follows:
 
-- **Backend** — deployed to [FastAPI Cloud](https://fastapicloud.com) with `uv run fastapi deploy`. Environment variables (`DB_CONNECTION`, `SECRET_KEY`, `ALGORITHM`, `EXP_TIME`) are set as encrypted secrets via the FastAPI Cloud CLI, never committed to the repo.
+- **Backend** — deployed to [FastAPI Cloud](https://fastapicloud.com) with `uv run fastapi deploy`. Environment variables (`DB_CONNECTION`, `SECRET_KEY`, `ALGORITHM`, `EXP_TIME`, and `HUGGINGFACE_API_KEY`) are set in the FastAPI Cloud dashboard, never committed to the repo.
 - **Database** — a managed PostgreSQL instance on [Neon](https://neon.tech).
 - **Frontend** — the static `docs/index.html` is served for free via **GitHub Pages**, configured in the repo's **Settings → Pages** with the source set to the `docs/` folder. Its `API_BASE` constant points at the FastAPI Cloud backend URL.
 
@@ -366,11 +382,17 @@ To deploy your own copy:
 ```bash
 # Backend
 uv run fastapi deploy
-uv run fastapi cloud env set --secret DB_CONNECTION "your-neon-connection-string"
-uv run fastapi cloud env set --secret SECRET_KEY "your-generated-secret"
-uv run fastapi cloud env set ALGORITHM "HS256"
-uv run fastapi cloud env set EXP_TIME "60"
-uv run fastapi deploy   # redeploy so the new env vars take effect
+uv run fastapi deploy
+```
+
+Then add these variables in the FastAPI Cloud dashboard before redeploying:
+
+```text
+DB_CONNECTION=your-neon-connection-string
+SECRET_KEY=your-generated-secret
+ALGORITHM=HS256
+EXP_TIME=60
+HUGGINGFACE_API_KEY=your-huggingface-token
 ```
 
 Then update `API_BASE` in `docs/index.html` to your new backend URL, push to GitHub, and enable GitHub Pages for the `docs/` folder.

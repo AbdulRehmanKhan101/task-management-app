@@ -905,6 +905,90 @@
       .hero h1 { font-size: 24px; }
       .task-title { white-space: normal; }
     }
+
+      .chat-panel {
+        margin-top: 24px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: linear-gradient(145deg, rgba(16,24,39,.96), rgba(12,18,30,.96));
+        overflow: hidden;
+      }
+
+      .chat-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .chat-mark {
+        width: 36px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        color: white;
+        border-radius: 10px;
+        background: linear-gradient(145deg, #5c9dff, #3472d8);
+      }
+
+      .chat-heading { margin: 0; font-size: 15px; }
+      .chat-caption { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
+
+      .chat-messages {
+        min-height: 120px;
+        max-height: 360px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 18px 20px;
+        overflow-y: auto;
+      }
+
+      .chat-bubble {
+        width: fit-content;
+        max-width: min(680px, 86%);
+        padding: 10px 13px;
+        border-radius: 12px;
+        color: #dce5f3;
+        background: #172238;
+        font-size: 13px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+
+      .chat-bubble.user {
+        align-self: flex-end;
+        color: white;
+        background: #315f9e;
+      }
+
+      .chat-form {
+        display: flex;
+        gap: 9px;
+        padding: 14px 20px 18px;
+        border-top: 1px solid rgba(32,43,61,.7);
+      }
+
+      .chat-input {
+        min-width: 0;
+        flex: 1;
+        color: var(--text);
+        background: #080f1c;
+        border: 1px solid #253146;
+        border-radius: 9px;
+        outline: none;
+        padding: 11px 12px;
+      }
+
+      .chat-input:focus { border-color: rgba(92,157,255,.75); box-shadow: 0 0 0 3px rgba(92,157,255,.09); }
+      .chat-send { background: linear-gradient(135deg, #6ba7ff, #397bdc); }
+
+      @media (max-width: 480px) {
+        .chat-form { padding: 12px; }
+        .chat-header, .chat-messages { padding-left: 14px; padding-right: 14px; }
+        .chat-send { padding-left: 12px; padding-right: 12px; }
+      }
   </style>
 </head>
 
@@ -1122,6 +1206,25 @@
       </div>
 
       <section id="taskList" class="task-list"></section>
+
+      <section class="chat-panel" aria-labelledby="chatHeading">
+        <div class="chat-header">
+          <div class="chat-mark">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.6 8.6 0 0 1-3.4-.7L4 20l1.7-4A7.4 7.4 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/></svg>
+          </div>
+          <div>
+            <h2 id="chatHeading" class="chat-heading">Taskline Assistant</h2>
+            <p class="chat-caption">A general planning assistant, separate from your task data.</p>
+          </div>
+        </div>
+        <div id="chatMessages" class="chat-messages" aria-live="polite">
+          <div class="chat-bubble">Hi. I can help you plan, prioritize, or break down work.</div>
+        </div>
+        <form id="chatForm" class="chat-form">
+          <input id="chatInput" class="chat-input" type="text" maxlength="4000" placeholder="Ask for a planning idea..." autocomplete="off">
+          <button id="chatSend" class="primary-btn chat-send" type="submit" title="Send message">Send</button>
+        </form>
+      </section>
     </main>
   </div>
 
@@ -1136,6 +1239,8 @@
       search: "",
       sort: "newest"
     };
+
+    const chatState = { messages: [] };
 
     const $ = id => document.getElementById(id);
 
@@ -1533,6 +1638,47 @@
     });
 
     $("refreshButton").addEventListener("click", loadTasks);
+
+    /* ---------- Standalone assistant ---------- */
+
+    function addChatBubble(content, role = "assistant") {
+      const bubble = document.createElement("div");
+      bubble.className = `chat-bubble ${role}`;
+      bubble.textContent = content;
+      $("chatMessages").appendChild(bubble);
+      $("chatMessages").scrollTop = $("chatMessages").scrollHeight;
+      return bubble;
+    }
+
+    $("chatForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const input = $("chatInput");
+      const content = input.value.trim();
+      if (!content) return;
+
+      const sendButton = $("chatSend");
+      chatState.messages.push({ role: "user", content });
+      addChatBubble(content, "user");
+      input.value = "";
+      sendButton.disabled = true;
+      const pending = addChatBubble("Thinking...");
+
+      try {
+        const data = await apiFetch("/chat", {
+          method: "POST",
+          body: JSON.stringify({ messages: chatState.messages.slice(-20) })
+        });
+        pending.remove();
+        chatState.messages.push({ role: "assistant", content: data.message });
+        addChatBubble(data.message);
+      } catch (error) {
+        pending.textContent = error.message;
+        pending.classList.add("error");
+      } finally {
+        sendButton.disabled = false;
+        input.focus();
+      }
+    });
 
     /* ---------- Startup ---------- */
 

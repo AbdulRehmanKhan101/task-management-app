@@ -5,6 +5,7 @@ from src.utils.settings import settings
 from src.tasks.router import task_routes
 
 from src.users.router import user_routes
+from chatbot.router import chat_routes
 Base.metadata.create_all(engine)
 app = FastAPI(title="This is my task management Application")
 
@@ -18,5 +19,6 @@ app.add_middleware(
 
 app.include_router(task_routes)
 app.include_router(user_routes)
+app.include_router(chat_routes)
 
 
